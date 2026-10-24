@@ -2,6 +2,7 @@
 
 [![GitHub](https://img.shields.io/badge/GitHub-kesardev%2Ffont--hub-181717?logo=github)](https://github.com/kesardev/font-hub)
 [![Docker Hub](https://img.shields.io/badge/Docker%20Hub-kesardev%2Ffont--hub-2496ED?logo=docker)](https://hub.docker.com/r/kesardev/font-hub)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
 自托管的字体库管理工具：扫描指定目录下的字体文件，集中查看元数据与特征、检测重复、在线预览缺字，并通过回收站安全删除。适合管理媒体服务器字体目录、设计素材库，或任意规模的字体归档。
 
@@ -115,6 +116,10 @@ compose.prod.yaml  生产部署
 
 ## 说明
 
-- woff / woff2 可以管理、预览与下载，但部分字幕渲染器只识别 ttf / otf / ttc
+- woff / woff2 可以管理、预览与下载，但部分应用只识别 ttf / otf / ttc
 - 单次批量删除上限 500 个，更大规模建议分批操作
 - 首次预览 TTC 需要抽取字体面，19 MB 左右的文件约 30 秒，之后走缓存
+
+## 许可证
+
+本项目使用 MIT License，详见 [LICENSE](LICENSE)。
