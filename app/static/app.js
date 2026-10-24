@@ -1334,7 +1334,7 @@ async function loadPreviewFont(data, face, token) {
     ? "正在加载字体，TTC 首次预览需要抽面，可能等待数秒..."
     : "正在加载字体...";
   $("previewError").hidden = true;
-  var version = data.sha1 || data.sha256 || data.md5 || data.mtime_ns || "";
+  var version = "p2-" + (data.sha1 || data.sha256 || data.md5 || data.mtime_ns || "");
   var url = "/api/fonts/" + data.id + "/preview?face=" + face + "&v=" + encodeURIComponent(version);
   var family = "font-hub-preview-" + data.id + "-" + face + "-" + Date.now();
   var loaded = await new Promise(function (resolve, reject) {

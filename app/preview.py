@@ -3,6 +3,7 @@ import unicodedata
 from pathlib import Path
 
 from fontTools.ttLib import TTCollection, TTFont
+from fontTools.ttLib.tables._g_l_y_f import Glyph
 
 from . import fonts
 from .config import STATE_DIR
@@ -61,6 +62,24 @@ def _prune_preview_cache(keep: Path) -> None:
             continue
 
 
+def _sanitize_glyf(font) -> int:
+    try:
+        glyf = font["glyf"]
+    except KeyError:
+        return 0
+    fixed = 0
+    for name in list(glyf.glyphs.keys()):
+        glyph = glyf.glyphs[name]
+        try:
+            glyph.expand(glyf)
+        except Exception:
+            empty = Glyph()
+            empty.numberOfContours = 0
+            glyf.glyphs[name] = empty
+            fixed += 1
+    return fixed
+
+
 def get_preview_font(data: dict, face: int = 0) -> tuple[Path, str]:
     path = fonts.safe_font_path(data["rel_path"])
     if face < 0 or face >= _face_count(data):
@@ -75,16 +94,16 @@ def get_preview_font(data: dict, face: int = 0) -> tuple[Path, str]:
         if cached.is_file() and cached.stat().st_size > 0:
             return cached, _media_type(ext)
     try:
-        collection = TTCollection(str(path), lazy=False)
+        font = TTFont(str(path), fontNumber=face, lazy=True)
         try:
-            font = collection.fonts[face]
+            _sanitize_glyf(font)
             ext = ".otf" if "CFF " in font else ".ttf"
             out = base.with_suffix(ext)
             font.save(str(out))
             _prune_preview_cache(out)
             return out, _media_type(ext)
         finally:
-            collection.close()
+            font.close()
     except Exception as exc:
         raise PreviewError(f"TTC 抽面失败: {exc}") from exc
 
