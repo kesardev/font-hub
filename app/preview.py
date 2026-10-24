@@ -31,7 +31,7 @@ def _face_count(data: dict) -> int:
 
 def _cache_key(data: dict, face: int) -> str:
     digest = data.get("sha1") or data.get("md5") or "nohash"
-    return f"{digest}-{data.get('size')}-{data.get('mtime_ns')}-face{face}"
+    return f"s1-{digest}-{data.get('size')}-{data.get('mtime_ns')}-face{face}"
 
 
 def _prune_preview_cache(keep: Path) -> None:
