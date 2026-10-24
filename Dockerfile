@@ -5,12 +5,20 @@ ENV PYTHONUNBUFFERED=1
 ENV PIP_NO_CACHE_DIR=1
 ENV HOME=/data/state
 
+ARG APP_VERSION=dev
+ARG BUILD_COMMIT=
+ARG BUILD_TIME=
+ENV APP_VERSION=$APP_VERSION
+ENV BUILD_COMMIT=$BUILD_COMMIT
+ENV BUILD_TIME=$BUILD_TIME
+
 WORKDIR /app
 
 ARG PIP_INDEX_URL=https://pypi.org/simple
 COPY requirements.txt .
 RUN pip install --no-cache-dir --index-url "$PIP_INDEX_URL" -r requirements.txt
 
+COPY VERSION ./VERSION
 COPY app ./app
 RUN chmod -R a+rX /app/app
 

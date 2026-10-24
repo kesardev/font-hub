@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Query, Request
 from fastapi.responses import FileResponse
@@ -23,6 +24,20 @@ logging.basicConfig(
     format="%(asctime)s %(levelname)s %(name)s %(message)s",
 )
 log = logging.getLogger("font-hub")
+
+def _read_version() -> str:
+    value = os.environ.get("APP_VERSION", "").strip()
+    if value:
+        return value
+    try:
+        return (Path(__file__).resolve().parent.parent / "VERSION").read_text(encoding="utf-8").strip() or "dev"
+    except OSError:
+        return "dev"
+
+
+APP_VERSION = _read_version()
+BUILD_COMMIT = os.environ.get("BUILD_COMMIT", "").strip()
+BUILD_TIME = os.environ.get("BUILD_TIME", "").strip()
 
 
 def _purge_recycle_once() -> None:
@@ -97,12 +112,22 @@ def health():
     ok = db_status == "ok" and FONT_ROOT.is_dir()
     return {
         "status": "ok" if ok else "degraded",
+        "version": APP_VERSION,
         "font_root": str(FONT_ROOT),
         "font_root_exists": FONT_ROOT.is_dir(),
         "database": db_status,
         "fonts": count,
         "scan": fonts.scan_state.snapshot(),
         "hash": hashing.hash_state.snapshot(),
+    }
+
+
+@app.get("/api/version")
+def version_info():
+    return {
+        "version": APP_VERSION,
+        "commit": BUILD_COMMIT,
+        "build_time": BUILD_TIME,
     }
 
 

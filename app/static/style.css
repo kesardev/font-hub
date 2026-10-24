@@ -834,3 +834,12 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
 .row-delete:hover { border-color: var(--danger); }
 .layout.sidebar-collapsed { grid-template-columns: minmax(0, 1fr); }
 .layout.sidebar-collapsed .sidebar { display: none; }
+.version-info { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+.version-chip {
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--panel-2);
+  color: var(--muted);
+  font-size: 11px;
+}

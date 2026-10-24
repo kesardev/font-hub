@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/font-hub
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/jellyfin-font-hub
 
 jobs:
   build:
@@ -32,13 +32,18 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
+      - name: Compute build metadata
+        run: |
+          echo "APP_VERSION=$(cat VERSION)+build.${{ github.run_number }}" >> "$GITHUB_ENV"
+          echo "BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_ENV"
+
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.IMAGE_NAME }}
           tags: |
-            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha,prefix=sha-
@@ -55,12 +60,6 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             PIP_INDEX_URL=https://pypi.org/simple
-
-      - name: Update Docker Hub description
-        uses: peter-evans/dockerhub-description@v4
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ secrets.DOCKERHUB_USERNAME }}/font-hub
-          readme-filepath: ./README.md
-          short-description: 自托管字体库管理与预览工具
+            APP_VERSION=${{ env.APP_VERSION }}
+            BUILD_COMMIT=${{ github.sha }}
+            BUILD_TIME=${{ env.BUILD_TIME }}
