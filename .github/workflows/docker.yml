@@ -14,7 +14,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/jellyfin-font-hub
+  IMAGE_NAME: ${{ secrets.DOCKERHUB_USERNAME }}/font-hub
 
 jobs:
   build:
