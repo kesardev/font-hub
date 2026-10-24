@@ -843,3 +843,6 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
   color: var(--muted);
   font-size: 11px;
 }
+.version-info-wrap { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
+.version-info-wrap .version-info { margin-bottom: 0; }
+.version-github { text-decoration: none; font-size: 12px; padding: 4px 10px; }

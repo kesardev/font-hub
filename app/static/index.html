@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FontHub · 字体库</title>
-  <link rel="stylesheet" href="/static/style.css?v=3">
+  <link rel="stylesheet" href="/static/style.css?v=4">
 </head>
 <body>
   <header class="topbar">
@@ -116,7 +116,10 @@
       </div>
       <div class="modal-body">
         <h3 class="settings-title">版本信息</h3>
-        <div id="versionInfo" class="version-info"><span class="muted">读取中...</span></div>
+        <div class="version-info-wrap">
+          <a class="btn ghost version-github" href="https://github.com/kesardev/font-hub" target="_blank" rel="noopener noreferrer">GitHub</a>
+          <div id="versionInfo" class="version-info"><span class="muted">读取中...</span></div>
+        </div>
         <h3 class="settings-title">回收站</h3>
         <div class="settings-inline">
           <label class="settings-field">保留天数
@@ -215,6 +218,6 @@
     </div>
   </div>
   <div id="toast" class="toast" hidden></div>
-  <script src="/static/app.js?v=3"></script>
+  <script src="/static/app.js?v=4"></script>
 </body>
 </html>
