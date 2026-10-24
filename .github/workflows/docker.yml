@@ -55,3 +55,11 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             PIP_INDEX_URL=https://pypi.org/simple
+
+      - name: Update Docker Hub description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: ${{ secrets.DOCKERHUB_USERNAME }}/font-hub
+          readme-filepath: ./README.md
