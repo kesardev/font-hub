@@ -1,0 +1,29 @@
+services:
+  font-hub:
+    build: .
+    image: font-hub:latest
+    container_name: font-hub
+    user: 1000:0
+    ports:
+      - 13578:8080
+    volumes:
+      - /share/Container/userfonts:/data/fonts
+      - /share/Container/userfonts-recycle:/data/recycle
+      - /share/Container/font-hub/config:/data/config
+      - /share/Container/font-hub/state:/data/state
+    environment:
+      - TZ=Asia/Shanghai
+      - FONT_ROOT=/data/fonts
+      - STATE_DIR=/data/state
+      - CONFIG_DIR=/data/config
+      - RECYCLE_DIR=/data/recycle
+      - HOME=/data/state
+      - AUTO_SCAN=1
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

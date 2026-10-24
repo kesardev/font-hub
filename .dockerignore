@@ -1,0 +1,10 @@
+.git
+__pycache__
+*.pyc
+*.db
+*.sqlite
+.venv
+test-fonts
+state
+
+**/__pycache__

@@ -1,0 +1,29 @@
+services:
+  font-hub:
+    image: ${FONT_HUB_IMAGE:-kesardev/font-hub:latest}
+    pull_policy: always
+    container_name: font-hub
+    user: "1000:0"
+    ports:
+      - "13578:8080"
+    volumes:
+      - /srv/fonts:/data/fonts
+      - /srv/font-hub/recycle:/data/recycle
+      - /srv/font-hub/config:/data/config
+      - /srv/font-hub/state:/data/state
+    environment:
+      - TZ=Asia/Shanghai
+      - FONT_ROOT=/data/fonts
+      - STATE_DIR=/data/state
+      - CONFIG_DIR=/data/config
+      - RECYCLE_DIR=/data/recycle
+      - HOME=/data/state
+      - AUTO_SCAN=1
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL

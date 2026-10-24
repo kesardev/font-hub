@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>FontHub · 字体库</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo">F</div>
+      <div>
+        <h1>FontHub</h1>
+        <p>字体库管理</p>
+      </div>
+    </div>
+    <div class="stats" id="stats">
+      <div class="stat"><span id="statTotal">-</span><label>字体</label></div>
+      <div class="stat"><span id="statSize">-</span><label>总大小</label></div>
+      <div class="stat"><span id="statFolders">-</span><label>文件夹</label></div>
+      <div class="stat"><span id="statErrors">-</span><label>解析失败</label></div>
+    </div>
+    <div class="top-actions">
+      <button id="uploadBtn" class="btn primary">上传</button>
+      <button id="hashBtn" class="btn ghost">哈希/查重</button>
+      <button id="scanBtn" class="btn ghost">扫描</button>
+      <button id="recycleBtn" class="btn ghost">回收站</button>
+      <button id="settingsBtn" class="btn ghost">设置</button>
+    </div>
+  </header>
+  <div class="scanbar" id="scanbar" hidden>
+    <div class="scan-text" id="scanText">准备扫描...</div>
+    <div class="progress"><div id="progressFill"></div></div>
+  </div>
+  <div class="scanbar" id="hashbar" hidden>
+    <div class="scan-text" id="hashText">准备计算哈希...</div>
+    <div class="progress"><div id="hashFill"></div></div>
+    <button id="hashStop" class="btn ghost" hidden>停止</button>
+  </div>
+  <main class="layout">
+    <aside class="sidebar">
+      <div class="sidebar-title">文件夹</div>
+      <div id="tree" class="tree"></div>
+    </aside>
+    <section class="content">
+      <div class="dup-banner" id="dupBanner" hidden>
+        重复文件：<b id="dupGroups">0</b> 组 · <b id="dupFiles">0</b> 个 · 可回收 <b id="dupWaste">0</b>
+      </div>
+      <div class="toolbar">
+        <input id="search" class="search" type="search" placeholder="搜索文件名、字体名、路径、版本">
+        <select id="sort" class="select" title="排序">
+          <option value="rel_path">路径</option>
+          <option value="name">文件名</option>
+          <option value="size">大小</option>
+          <option value="family">字体家族</option>
+          <option value="version">版本</option>
+          <option value="mtime_ns">修改时间</option>
+        </select>
+        <button id="dirBtn" class="btn ghost" title="切换排序方向">↑ 升序</button>
+        <label class="check"><input id="dupOnly" type="checkbox"> 仅重复</label>
+      </div>
+      <div id="batchBar" class="batch-bar" hidden>
+        <span>已选 <b id="selectedCount">0</b> 项</span>
+        <div class="batch-actions">
+          <button id="batchRecycle" class="btn ghost">移入回收站</button>
+          <button id="batchDelete" class="btn danger">永久删除</button>
+          <button id="batchClear" class="btn ghost">取消选择</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th class="select-cell"><input id="selectAll" type="checkbox" aria-label="全选当前页"></th>
+              <th>文件名</th>
+              <th>字体名称</th>
+              <th>格式</th>
+              <th class="num">大小</th>
+              <th>版本</th>
+              <th class="num">面数</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="fontRows"></tbody>
+        </table>
+        <div id="empty" class="empty" hidden>
+          <div class="empty-icon">⌘</div>
+          <h2>还没有字体</h2>
+          <p id="emptyText">点击右上角“扫描字体”开始索引。</p>
+          <button id="emptyScan" class="btn primary">开始扫描</button>
+        </div>
+      </div>
+      <footer class="pager">
+        <span id="pageInfo">-</span>
+        <div class="pager-actions">
+          <button id="prevBtn" class="btn ghost">上一页</button>
+          <button id="nextBtn" class="btn ghost">下一页</button>
+        </div>
+      </footer>
+    </section>
+  </main>
+  <div class="modal-backdrop" id="settingsModal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="drawer-kicker">项目设置</div>
+          <h2>回收站与预览文本</h2>
+        </div>
+        <button id="settingsClose" class="icon-btn" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <h3 class="settings-title">回收站</h3>
+        <div class="settings-inline">
+          <label class="settings-field">保留天数
+            <input id="recycleDays" type="number" min="1" max="3650" value="30">
+          </label>
+          <label class="check"><input id="recyclePermanent" type="checkbox"> 永久保留</label>
+        </div>
+        <p class="muted">删除的字体默认移入回收站；默认保留 30 天，到期自动清理。范围 1-3650 天，或勾选永久；调整后对现有项目同样生效。</p>
+        <h3 class="settings-title">默认预览文本</h3>
+        <p class="muted">预览面板会用这四段文本展示字体效果；文本框留空时使用系统默认字符串。</p>
+        <div class="settings-grid">
+          <label class="settings-field">中文（简体 / 繁体）<textarea id="preview_cn" rows="4" maxlength="2000"></textarea></label>
+          <label class="settings-field">英文（大写 / 小写）<textarea id="preview_en" rows="4" maxlength="2000"></textarea></label>
+          <label class="settings-field">标点（中文 / 英文 / 数字）<textarea id="preview_punct" rows="4" maxlength="2000"></textarea></label>
+          <label class="settings-field">特殊<textarea id="preview_special" rows="3" maxlength="2000"></textarea></label>
+        </div>
+        <div class="upload-toolbar">
+          <button id="settingsReset" class="btn ghost">恢复默认预览文本</button>
+          <button id="settingsSave" class="btn primary">保存</button>
+        </div>
+        <div id="settingsHint" class="muted">留空时预览使用默认测试文本；中文简/繁、英文大/小写、标点中/英/数字分行显示。</div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="uploadModal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="drawer-kicker">上传字体</div>
+          <h2>批量 / 文件夹上传</h2>
+        </div>
+        <button id="uploadClose" class="icon-btn" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="upload-target">目标文件夹：<code id="uploadTarget">/</code></div>
+        <div class="dropzone" id="dropzone">
+          <div class="drop-title">拖入字体文件</div>
+          <div class="drop-sub">支持 .ttf / .otf / .ttc / .woff / .woff2；文件夹上传会保留相对路径</div>
+          <div class="drop-actions">
+            <label class="btn ghost">选择文件<input id="fileInput" type="file" multiple accept=".ttf,.otf,.ttc,.woff,.woff2" hidden></label>
+            <label class="btn ghost">选择文件夹<input id="folderInput" type="file" webkitdirectory directory multiple hidden></label>
+          </div>
+        </div>
+        <div class="upload-toolbar">
+          <label class="check"><input id="applyAll" type="checkbox"> 对全部重名冲突应用相同选择</label>
+          <button id="uploadStart" class="btn primary" disabled>开始上传</button>
+        </div>
+        <div id="uploadList" class="upload-list"></div>
+        <div id="uploadSummary" class="upload-summary" hidden></div>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-backdrop" id="drawerBackdrop" hidden></div>
+  <aside class="drawer" id="drawer" hidden>
+    <div class="drawer-head">
+      <div>
+        <div class="drawer-kicker">字体详情</div>
+        <h2 id="drawerTitle">-</h2>
+      </div>
+      <button id="drawerClose" class="icon-btn" aria-label="关闭">×</button>
+    </div>
+    <div id="drawerBody" class="drawer-body"></div>
+  </aside>
+  <div class="modal-backdrop" id="recycleModal" hidden>
+    <div class="modal-card">
+      <div class="modal-head">
+        <div>
+          <div class="drawer-kicker">回收站</div>
+          <h2>已删除字体</h2>
+        </div>
+        <button id="recycleClose" class="icon-btn" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <p id="recycleHint" class="muted">加载中...</p>
+        <div id="recycleList" class="recycle-list"></div>
+      </div>
+    </div>
+  </div>
+  <div class="modal-backdrop" id="deleteModal" hidden>
+    <div class="modal-card modal-small">
+      <div class="modal-head">
+        <div>
+          <div class="drawer-kicker">删除字体</div>
+          <h2 id="deleteTarget">-</h2>
+        </div>
+        <button id="deleteClose" class="icon-btn" aria-label="关闭">×</button>
+      </div>
+      <div class="modal-body">
+        <label class="check"><input id="deletePermanent" type="checkbox"> 跳过回收站，永久删除</label>
+        <p id="deleteHint" class="muted"></p>
+        <div class="upload-toolbar">
+          <button id="deleteCancel" class="btn ghost">取消</button>
+          <button id="deleteConfirm" class="btn danger">移入回收站</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="toast" class="toast" hidden></div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
