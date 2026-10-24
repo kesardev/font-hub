@@ -1,5 +1,8 @@
 # FontHub
 
+[![GitHub](https://img.shields.io/badge/GitHub-kesardev%2Ffont--hub-181717?logo=github)](https://github.com/kesardev/font-hub)
+[![Docker Hub](https://img.shields.io/badge/Docker%20Hub-kesardev%2Ffont--hub-2496ED?logo=docker)](https://hub.docker.com/r/kesardev/font-hub)
+
 自托管的字体库管理工具：扫描指定目录下的字体文件，集中查看元数据与特征、检测重复、在线预览缺字，并通过回收站安全删除。适合管理媒体服务器字体目录、设计素材库，或任意规模的字体归档。
 
 ## 功能
@@ -27,6 +30,41 @@ docker compose -f compose.prod.yaml up -d
 启动后访问 http://<host>:13578。默认监听 13578，可在 compose 文件里改成其他端口。
 
 也可以用 docker run 直接启动，关键是把字体目录、配置、状态和回收站四个目录挂进容器，并设置对应环境变量。
+
+## 示例 compose 文件
+
+可直接复制使用，按需修改宿主机路径与端口：
+
+~~~yaml
+services:
+  font-hub:
+    image: kesardev/font-hub:latest
+    container_name: font-hub
+    user: '1000:0'
+    ports:
+      - '13578:8080'
+    volumes:
+      - /srv/fonts:/data/fonts
+      - /srv/font-hub/recycle:/data/recycle
+      - /srv/font-hub/config:/data/config
+      - /srv/font-hub/state:/data/state
+    environment:
+      - TZ=Asia/Shanghai
+      - FONT_ROOT=/data/fonts
+      - STATE_DIR=/data/state
+      - CONFIG_DIR=/data/config
+      - RECYCLE_DIR=/data/recycle
+      - HOME=/data/state
+      - AUTO_SCAN=1
+    restart: unless-stopped
+    read_only: true
+    tmpfs:
+      - /tmp
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+~~~
 
 ## 配置
 
