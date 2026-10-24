@@ -1,3 +1,4 @@
+import re
 import sqlite3
 
 from .config import DB_PATH, STATE_DIR
@@ -220,15 +221,20 @@ def list_fonts(
     if path:
         where.append("f.rel_path LIKE ? ESCAPE '!'")
         params.append(_like(path) + "/%")
-    if q:
-        needle = "%" + _like(q) + "%"
+    tokens = [item for item in re.split(r"[\s,，、]+", q.strip()) if item][:8]
+    for token in tokens:
+        needle = "%" + _like(token) + "%"
+        compact = "%" + _like(re.sub(r"[\s\-_.]+", "", token)) + "%"
         where.append(
             "(f.name LIKE ? ESCAPE '!' OR f.rel_path LIKE ? ESCAPE '!' OR "
             "COALESCE(f.family, '') LIKE ? ESCAPE '!' OR "
             "COALESCE(f.full_name, '') LIKE ? ESCAPE '!' OR "
-            "COALESCE(f.version, '') LIKE ? ESCAPE '!')"
+            "COALESCE(f.version, '') LIKE ? ESCAPE '!' OR "
+            "replace(replace(replace(replace("
+            "f.name || f.rel_path || COALESCE(f.family,'') || COALESCE(f.full_name,''), "
+            "' ', ''), '-', ''), '_', ''), '.', '') LIKE ? ESCAPE '!')"
         )
-        params.extend([needle] * 5)
+        params.extend([needle] * 5 + [compact])
     if duplicates:
         where.append("COALESCE(f.sha256, f.sha1) IS NOT NULL")
         where.append(

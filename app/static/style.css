@@ -846,3 +846,7 @@ a.btn { display: inline-flex; align-items: center; justify-content: center; text
 .version-info-wrap { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 10px; }
 .version-info-wrap .version-info { margin-bottom: 0; }
 .version-github { text-decoration: none; font-size: 12px; padding: 4px 10px; }
+thead th[data-sort] { cursor: pointer; user-select: none; white-space: nowrap; }
+thead th[data-sort]:hover, thead th[data-sort].sorted { color: var(--text); }
+thead th[data-sort].sorted::after { content: " ↑"; font-size: 10px; color: var(--accent); }
+thead th[data-sort].sorted.sort-desc::after { content: " ↓"; }

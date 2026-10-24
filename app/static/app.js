@@ -1,7 +1,7 @@
 var state = {
   path: "",
   q: "",
-  sort: "rel_path",
+  sort: "name",
   direction: "asc",
   page: 1,
   pageSize: 100,
@@ -201,6 +201,7 @@ function renderList() {
   });
   tbody.innerHTML = html;
   updateBatchBar();
+  updateSortHeaders();
 }
 
 function renderPager() {
@@ -438,6 +439,16 @@ function setSidebarCollapsed(value) {
   applySidebarState();
 }
 
+function updateSortHeaders() {
+  var ths = document.querySelectorAll("thead th[data-sort]");
+  for (var i = 0; i < ths.length; i++) {
+    var th = ths[i];
+    var active = !state.duplicates && th.getAttribute("data-sort") === state.sort;
+    th.classList.toggle("sorted", active);
+    th.classList.toggle("sort-desc", active && state.direction === "desc");
+  }
+}
+
 function bindEvents() {
   try {
     state.sidebarCollapsed = localStorage.getItem("fontHub.sidebarCollapsed") === "1";
@@ -520,8 +531,7 @@ function bindEvents() {
     state.duplicates = !state.duplicates;
     state.page = 1;
     $("dedupeBtn").classList.toggle("primary", state.duplicates);
-    $("sort").disabled = state.duplicates;
-    $("dirBtn").disabled = state.duplicates;
+    updateSortHeaders();
     loadFonts();
   });
   $("emptyScan").addEventListener("click", startScan);
@@ -534,17 +544,23 @@ function bindEvents() {
       loadFonts();
     }, 250);
   });
-  $("sort").addEventListener("change", function (event) {
-    state.sort = event.target.value;
-    state.page = 1;
-    loadFonts();
-  });
-  $("dirBtn").addEventListener("click", function () {
-    state.direction = state.direction === "asc" ? "desc" : "asc";
-    $("dirBtn").textContent = state.direction === "asc" ? "↑ 升序" : "↓ 降序";
-    state.page = 1;
-    loadFonts();
-  });
+  var headRow = document.querySelector("thead tr");
+  if (headRow) {
+    headRow.addEventListener("click", function (event) {
+      var th = event.target.closest("th[data-sort]");
+      if (!th || state.duplicates) return;
+      var key = th.getAttribute("data-sort");
+      if (state.sort === key) {
+        state.direction = state.direction === "asc" ? "desc" : "asc";
+      } else {
+        state.sort = key;
+        state.direction = "asc";
+      }
+      state.page = 1;
+      updateSortHeaders();
+      loadFonts();
+    });
+  }
   $("prevBtn").addEventListener("click", function () {
     if (state.page > 1) {
       state.page--;
@@ -981,7 +997,7 @@ async function loadVersionInfo() {
     var parts = ["运行版本 " + (info.version || "dev")];
     if (info.commit) parts.push("提交 " + String(info.commit).slice(0, 7));
     if (info.build_time) parts.push("构建 " + info.build_time);
-    parts.push("页面资源 v=4");
+    parts.push("页面资源 v=5");
     box.innerHTML = parts.map(function (item) {
       return '<span class="version-chip">' + esc(item) + '</span>';
     }).join("");

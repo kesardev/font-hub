@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FontHub · 字体库</title>
-  <link rel="stylesheet" href="/static/style.css?v=4">
+  <link rel="stylesheet" href="/static/style.css?v=5">
 </head>
 <body>
   <header class="topbar">
@@ -49,18 +49,7 @@
       </div>
       <div class="toolbar">
         <button id="sidebarShow" class="btn ghost" type="button" title="显示文件夹" hidden>文件夹</button>
-        <input id="search" class="search" type="search" placeholder="搜索文件名、字体名、路径、版本">
-        <select id="sort" class="select" title="排序">
-          <option value="name">文件名</option>
-          <option value="family">字体名称</option>
-          <option value="ext">格式</option>
-          <option value="size">大小</option>
-          <option value="created_ns">创建日期</option>
-          <option value="mtime_ns">修改日期</option>
-          <option value="rel_path">路径</option>
-          <option value="version">版本</option>
-        </select>
-        <button id="dirBtn" class="btn ghost" title="切换排序方向">↑ 升序</button>
+        <input id="search" class="search" type="search" placeholder="搜索文件名、字体名、路径、版本（空格分隔多个关键词）">
         <button id="dedupeBtn" class="btn ghost" title="只显示重复文件">去重</button>
       </div>
       <div id="batchBar" class="batch-bar" hidden>
@@ -76,13 +65,13 @@
           <thead>
             <tr>
               <th class="select-cell"><input id="selectAll" type="checkbox" aria-label="全选当前页"></th>
-              <th>文件名</th>
-              <th>字体名称</th>
-              <th>格式</th>
-              <th class="num">大小</th>
-              <th>创建日期</th>
-              <th>修改日期</th>
-              <th>版本</th>
+              <th data-sort="name">文件名</th>
+              <th data-sort="family">字体名称</th>
+              <th data-sort="ext">格式</th>
+              <th class="num" data-sort="size">大小</th>
+              <th data-sort="created_ns">创建日期</th>
+              <th data-sort="mtime_ns">修改日期</th>
+              <th data-sort="version">版本</th>
               <th class="num">面数</th>
               <th>状态</th>
             </tr>
@@ -218,6 +207,6 @@
     </div>
   </div>
   <div id="toast" class="toast" hidden></div>
-  <script src="/static/app.js?v=4"></script>
+  <script src="/static/app.js?v=5"></script>
 </body>
 </html>
