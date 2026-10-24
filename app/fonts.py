@@ -238,8 +238,9 @@ class ScanState:
                 rel = path.relative_to(FONT_ROOT).as_posix()
                 try:
                     stat = path.stat()
+                    created_ns = getattr(stat, "st_birthtime_ns", None) or stat.st_ctime_ns
                     existing = conn.execute(
-                        "SELECT id, size, mtime_ns, parse_status FROM fonts WHERE rel_path=?",
+                        "SELECT id, size, mtime_ns, parse_status, created_ns FROM fonts WHERE rel_path=?",
                         (rel,),
                     ).fetchone()
                     if (
@@ -249,6 +250,8 @@ class ScanState:
                         and existing["parse_status"] in ("ok", "error")
                     ):
                         db.mark_seen(conn, int(existing["id"]))
+                        if existing["created_ns"] is None:
+                            db.set_created(conn, int(existing["id"]), created_ns)
                     else:
                         meta = parse_font(path)
                         if meta.get("status") == "error":
@@ -262,6 +265,7 @@ class ScanState:
                                 "ext": path.suffix.lower(),
                                 "size": stat.st_size,
                                 "mtime_ns": stat.st_mtime_ns,
+                                "created_ns": created_ns,
                                 "family": meta.get("family"),
                                 "subfamily": meta.get("subfamily"),
                                 "full_name": meta.get("full_name"),
@@ -289,6 +293,7 @@ class ScanState:
                                 "ext": path.suffix.lower(),
                                 "size": stat.st_size,
                                 "mtime_ns": stat.st_mtime_ns,
+                                "created_ns": getattr(stat, "st_birthtime_ns", None) or stat.st_ctime_ns,
                                 "parse_status": "error",
                                 "parse_error": f"{type(exc).__name__}: {exc}"[:500],
                             },

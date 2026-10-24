@@ -14,6 +14,7 @@ var state = {
   searchTimer: null,
   listToken: 0,
   duplicates: false,
+  sidebarCollapsed: false,
   hash: null,
   hashTimer: null,
   uploading: false,
@@ -176,17 +177,26 @@ function renderList() {
     var family = item.family || "—";
     var sub = item.subfamily ? "<div class=\"muted\">" + esc(item.subfamily) + "</div>" : "";
     var dup = item.duplicate_count > 1;
-    var dupBadge = dup ? '<span class="dup-badge">重复 ×' + item.duplicate_count + '</span>' : "";
+    var dupIndex = Number(item.duplicate_index || 0);
+    var rowClass = dup ? (dupIndex === 0 ? "dup-original" : "dup-copy") : "";
+    var dupBadge = "";
+    if (dup) {
+      dupBadge = dupIndex === 0
+        ? '<span class="dup-badge original">原始</span>'
+        : '<span class="dup-badge copy">重复x' + dupIndex + '</span>';
+    }
     var checked = state.selectedIds.indexOf(item.id) !== -1 ? " checked" : "";
-    html += dup ? '<tr class="dup-row">' : "<tr>";
+    html += rowClass ? '<tr class="' + rowClass + '">' : "<tr>";
     html += '<td class="select-cell"><input type="checkbox" class="row-check" data-id="' + item.id + '"' + checked + '></td>';
     html += "<td><button class=\"file-link\" data-id=\"" + item.id + "\">" + esc(item.name) + "</button>" + dupBadge + "<div class=\"path\" title=\"" + esc(item.rel_path) + "\">" + esc(item.rel_path) + "</div></td>";
     html += "<td>" + esc(family) + sub + "</td>";
     html += "<td><span class=\"badge\">" + esc(String(item.ext || "").replace(".", "").toUpperCase()) + "</span></td>";
     html += "<td class=\"num\">" + formatBytes(item.size) + "</td>";
+    html += "<td>" + formatDate(item.created_ns) + "</td>";
+    html += "<td>" + formatDate(item.mtime_ns) + "</td>";
     html += "<td>" + esc(item.version || "—") + "</td>";
     html += "<td class=\"num\">" + (item.face_count || 1) + "</td>";
-    html += "<td>" + statusBadge(item) + "</td>";
+    html += "<td>" + statusBadge(item) + (dup ? ' <button type="button" class="row-delete" data-delete-row="' + item.id + '">删除</button>' : "") + "</td>";
     html += "</tr>";
   });
   tbody.innerHTML = html;
@@ -412,7 +422,29 @@ function fallbackCopy(text) {
   document.body.removeChild(area);
 }
 
+function applySidebarState() {
+  var layout = document.querySelector(".layout");
+  if (!layout) return;
+  layout.classList.toggle("sidebar-collapsed", state.sidebarCollapsed);
+  var show = document.getElementById("sidebarShow");
+  if (show) show.hidden = !state.sidebarCollapsed;
+}
+
+function setSidebarCollapsed(value) {
+  state.sidebarCollapsed = !!value;
+  try {
+    localStorage.setItem("fontHub.sidebarCollapsed", value ? "1" : "0");
+  } catch (err) {}
+  applySidebarState();
+}
+
 function bindEvents() {
+  try {
+    state.sidebarCollapsed = localStorage.getItem("fontHub.sidebarCollapsed") === "1";
+  } catch (err) {}
+  applySidebarState();
+  $("sidebarToggle").addEventListener("click", function () { setSidebarCollapsed(true); });
+  $("sidebarShow").addEventListener("click", function () { setSidebarCollapsed(false); });
   $("scanBtn").addEventListener("click", startScan);
   $("hashBtn").addEventListener("click", startHashFlow);
   $("hashStop").addEventListener("click", stopHash);
@@ -484,9 +516,10 @@ function bindEvents() {
     drop.classList.remove("dragover");
     addUploadFiles(event.dataTransfer.files);
   });
-  $("dupOnly").addEventListener("change", function (event) {
-    state.duplicates = event.target.checked;
+  $("dedupeBtn").addEventListener("click", function () {
+    state.duplicates = !state.duplicates;
     state.page = 1;
+    $("dedupeBtn").classList.toggle("primary", state.duplicates);
     $("sort").disabled = state.duplicates;
     $("dirBtn").disabled = state.duplicates;
     loadFonts();
@@ -534,6 +567,11 @@ function bindEvents() {
     loadFonts();
   });
   $("fontRows").addEventListener("click", function (event) {
+    var rowDelete = event.target.closest("[data-delete-row]");
+    if (rowDelete) {
+      openDeleteModal(Number(rowDelete.getAttribute("data-delete-row")));
+      return;
+    }
     var button = event.target.closest(".file-link");
     if (!button) return;
     openDetail(button.getAttribute("data-id"));
@@ -1044,7 +1082,9 @@ async function openBatchDelete(permanent) {
 async function openDeleteModal(id) {
   state.pendingDeleteId = Number(id);
   state.pendingDeleteIds = [Number(id)];
-  $("deleteTarget").textContent = $("drawerTitle").textContent || ("字体 #" + id);
+  var rowItem = state.items.filter(function (item) { return item.id === Number(id); })[0];
+  var drawerTitle = $("drawerTitle").textContent;
+  $("deleteTarget").textContent = rowItem ? rowItem.name : (drawerTitle && drawerTitle !== "-" ? drawerTitle : ("字体 #" + id));
   $("deletePermanent").checked = false;
   $("deleteModal").hidden = false;
   if (!state.projectSettings) {

@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS fonts (
     ext TEXT NOT NULL,
     size INTEGER NOT NULL,
     mtime_ns INTEGER NOT NULL,
+    created_ns INTEGER,
     family TEXT,
     subfamily TEXT,
     full_name TEXT,
@@ -85,6 +86,8 @@ def init_db() -> None:
         if "sha256" not in columns:
             conn.execute("alter table fonts add column sha256 text")
         conn.execute("create index if not exists idx_fonts_sha256 on fonts(sha256)")
+        if "created_ns" not in columns:
+            conn.execute("alter table fonts add column created_ns integer")
 
 
 def reset_present(conn: sqlite3.Connection) -> None:
@@ -98,20 +101,25 @@ def mark_seen(conn: sqlite3.Connection, font_id: int) -> None:
     )
 
 
+def set_created(conn: sqlite3.Connection, font_id: int, created_ns: int | None) -> None:
+    conn.execute('UPDATE fonts SET created_ns=? WHERE id=?', (created_ns, font_id))
+
+
 def upsert_font(conn: sqlite3.Connection, data: dict, faces: list[dict]) -> int:
     row = conn.execute(
         """
         INSERT INTO fonts (
-            rel_path, name, ext, size, mtime_ns, family, subfamily, full_name,
+            rel_path, name, ext, size, mtime_ns, created_ns, family, subfamily, full_name,
             version, postscript_name, face_count, glyph_count, units_per_em,
             md5, sha1, sha256, parse_status, parse_error,
             present, last_seen, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
         ON CONFLICT(rel_path) DO UPDATE SET
             name=excluded.name,
             ext=excluded.ext,
             size=excluded.size,
             mtime_ns=excluded.mtime_ns,
+            created_ns=excluded.created_ns,
             family=excluded.family,
             subfamily=excluded.subfamily,
             full_name=excluded.full_name,
@@ -132,6 +140,7 @@ def upsert_font(conn: sqlite3.Connection, data: dict, faces: list[dict]) -> int:
         """,
         (
             data["rel_path"], data["name"], data["ext"], data["size"], data["mtime_ns"],
+            data.get("created_ns"),
             data.get("family"), data.get("subfamily"), data.get("full_name"),
             data.get("version"), data.get("postscript_name"), data.get("face_count", 1),
             data.get("glyph_count"), data.get("units_per_em"),
@@ -190,6 +199,8 @@ SORT_COLUMNS = {
     "family": "COALESCE(f.family, '') COLLATE NOCASE",
     "version": "COALESCE(f.version, '') COLLATE NOCASE",
     "mtime_ns": "f.mtime_ns",
+    "created_ns": "f.created_ns",
+    "ext": "f.ext COLLATE NOCASE",
     "face_count": "f.face_count",
 }
 
@@ -239,11 +250,14 @@ def list_fonts(
         direction_sql = "DESC" if str(direction).lower() == "desc" else "ASC"
         order_sql = order + " " + direction_sql + ", f.rel_path COLLATE NOCASE ASC"
     rows = conn.execute(
-        "SELECT f.id, f.rel_path, f.name, f.ext, f.size, f.mtime_ns, f.family, f.subfamily, "
+        "SELECT f.id, f.rel_path, f.name, f.ext, f.size, f.mtime_ns, f.created_ns, f.family, f.subfamily, "
         "f.version, f.face_count, f.glyph_count, f.parse_status, f.parse_error, "
         "CASE WHEN COALESCE(f.sha256, f.sha1) IS NULL THEN 1 ELSE "
         "(SELECT COUNT(*) FROM fonts f2 WHERE f2.present=1 AND f2.size=f.size "
-        "AND COALESCE(f2.sha256,f2.sha1)=COALESCE(f.sha256,f.sha1)) END AS duplicate_count "
+        "AND COALESCE(f2.sha256,f2.sha1)=COALESCE(f.sha256,f.sha1)) END AS duplicate_count, "
+        "CASE WHEN COALESCE(f.sha256, f.sha1) IS NULL THEN 0 ELSE "
+        "ROW_NUMBER() OVER (PARTITION BY f.size, COALESCE(f.sha256,f.sha1) "
+        "ORDER BY f.rel_path COLLATE NOCASE ASC) - 1 END AS duplicate_index "
         "FROM fonts f WHERE " + where_sql + " ORDER BY " + order_sql + " LIMIT ? OFFSET ?",
         params + [page_size, offset],
     ).fetchall()

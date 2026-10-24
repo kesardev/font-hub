@@ -13,6 +13,8 @@
   --danger-soft: #fee4e2;
   --warning: #b54708;
   --warning-soft: #fef0c7;
+  --info: #1d4ed8;
+  --info-soft: #e8f0ff;
   --ok: #067647;
   --ok-soft: #dcfae6;
   --shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
@@ -32,6 +34,8 @@
     --danger-soft: #3b1716;
     --warning: #fdb022;
     --warning-soft: #3a2a0a;
+    --info: #93c5fd;
+    --info-soft: #12233f;
     --ok: #75e0a7;
     --ok-soft: #102a1c;
     --shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
@@ -121,6 +125,10 @@ button { color: inherit; }
   top: 65px;
 }
 .sidebar-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   font-size: 11px;
   text-transform: uppercase;
   letter-spacing: 0.08em;
@@ -400,7 +408,8 @@ tbody tr:last-child td { border-bottom: 0; }
   font-size: 12px;
 }
 .dup-banner[hidden] { display: none; }
-.dup-row td { background: var(--warning-soft); }
+.dup-original td { background: var(--info-soft); }
+.dup-copy td { background: var(--warning-soft); }
 .dup-badge {
   display: inline-flex;
   margin-left: 6px;
@@ -808,3 +817,18 @@ select.mini {
 
 a.btn { display: inline-flex; align-items: center; justify-content: center; text-decoration: none; }
 .preview-empty { opacity: 0.75; }
+.dup-badge.original { background: var(--info-soft); color: var(--info); }
+.dup-badge.copy { background: var(--warning-soft); color: var(--warning); }
+.row-delete {
+  margin-left: 8px;
+  padding: 2px 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--danger);
+  font-size: 11px;
+  cursor: pointer;
+}
+.row-delete:hover { border-color: var(--danger); }
+.layout.sidebar-collapsed { grid-template-columns: minmax(0, 1fr); }
+.layout.sidebar-collapsed .sidebar { display: none; }
