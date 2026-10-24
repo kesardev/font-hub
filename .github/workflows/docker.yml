@@ -63,3 +63,4 @@ jobs:
           password: ${{ secrets.DOCKERHUB_TOKEN }}
           repository: ${{ secrets.DOCKERHUB_USERNAME }}/font-hub
           readme-filepath: ./README.md
+          short-description: 自托管字体库管理与预览工具
