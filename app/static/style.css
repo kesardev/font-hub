@@ -68,12 +68,10 @@ button { color: inherit; }
   width: 36px;
   height: 36px;
   border-radius: 10px;
-  background: var(--accent);
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-weight: 800;
+  overflow: hidden;
+  flex: 0 0 auto;
 }
+.logo img { width: 100%; height: 100%; display: block; }
 .brand h1 { font-size: 16px; margin: 0; letter-spacing: 0.2px; }
 .brand p { margin: 1px 0 0; color: var(--muted); font-size: 11px; }
 .stats { display: flex; gap: 18px; flex: 1; }

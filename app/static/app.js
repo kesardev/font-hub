@@ -997,7 +997,7 @@ async function loadVersionInfo() {
     var parts = ["运行版本 " + (info.version || "dev")];
     if (info.commit) parts.push("提交 " + String(info.commit).slice(0, 7));
     if (info.build_time) parts.push("构建 " + info.build_time);
-    parts.push("页面资源 v=5");
+    parts.push("页面资源 v=6");
     box.innerHTML = parts.map(function (item) {
       return '<span class="version-chip">' + esc(item) + '</span>';
     }).join("");
