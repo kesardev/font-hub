@@ -1,3 +1,5 @@
+import ctypes
+import gc
 import hashlib
 import logging
 import os
@@ -11,6 +13,14 @@ from . import db
 from .config import FONT_ROOT, SCAN_EXTENSIONS
 
 log = logging.getLogger(__name__)
+
+
+def release_memory() -> None:
+    gc.collect()
+    try:
+        ctypes.CDLL("libc.so.6").malloc_trim(0)
+    except Exception:
+        pass
 
 
 def now_iso() -> str:
@@ -309,6 +319,7 @@ class ScanState:
             conn.commit()
         finally:
             conn.close()
+            release_memory()
 
 
 scan_state = ScanState()
