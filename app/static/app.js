@@ -789,6 +789,9 @@ function addUploadFiles(files) {
   });
   state.uploading = false;
   $("uploadSummary").hidden = true;
+  $("uploadOverall").hidden = true;
+  $("uploadOverallBar").style.width = "0%";
+  $("uploadOverallText").textContent = "0%";
   $("uploadStart").disabled = true;
   renderUploadPlan();
   runUploadPreflight();
@@ -826,6 +829,23 @@ async function runUploadPreflight() {
   }
 }
 
+function updateUploadOverall() {
+  var overall = $("uploadOverall");
+  if (!overall) return;
+  var total = 0;
+  var done = 0;
+  var finished = 0;
+  state.uploadPlan.forEach(function (p) {
+    var size = p.size || 1;
+    total += size;
+    done += size * Math.min(100, p.percent || 0) / 100;
+    if ((p.percent || 0) >= 100) finished++;
+  });
+  var percent = total ? Math.round(done * 100 / total) : 0;
+  $("uploadOverallBar").style.width = percent + "%";
+  $("uploadOverallText").textContent = finished + " / " + state.uploadPlan.length + " · " + percent + "%";
+}
+
 function renderUploadPlan() {
   var list = $("uploadList");
   if (!state.uploadPlan.length) {
@@ -834,13 +854,20 @@ function renderUploadPlan() {
   }
   var html = "";
   state.uploadPlan.forEach(function (p, index) {
-    var cls = p.status === "uploaded" ? "ok" : p.status === "error" ? "err" : p.status === "skipped" ? "warn" : "";
+    var cls = p.status === "uploaded" ? (p.parseFailed ? "warn" : "ok") : p.status === "error" ? "err" : p.status === "skipped" ? "warn" : p.status === "parsing" ? "parsing" : "";
     html += '<div class="upload-row">';
     html += '<div><div class="upload-name" title="' + esc(p.name) + '">' + esc(p.name) + '</div><div class="upload-meta">' + formatBytes(p.size);
     if (p.status === "conflict" && p.result && p.result.existing) {
       html += ' · 已存在：' + esc(p.result.existing.rel_path);
     } else if (p.message && (p.status === "skipped" || p.status === "invalid" || p.status === "error")) {
       html += ' · ' + esc(p.message);
+    } else if (p.status === "uploaded" && p.result) {
+      if (p.parseFailed) {
+        html += ' · 解析失败';
+      } else {
+        if (p.result.family) html += ' · ' + esc(p.result.family);
+        if (p.result.version) html += ' · ' + esc(p.result.version);
+      }
     }
     html += '</div></div>';
     if (p.status === "conflict") {
@@ -852,8 +879,8 @@ function renderUploadPlan() {
     } else {
       html += '<div></div>';
     }
-    var label = p.status === "checking" ? "检查中" : p.message;
-    html += '<div class="upload-status ' + cls + '">' + esc(label) + '<div class="upload-progress"><div data-progress="' + index + '" style="width:' + (p.percent || 0) + '%"></div></div></div>';
+    var label = p.status === "checking" ? "检查中" : p.status === "uploading" ? "上传中 " + (p.percent || 0) + "%" : p.message;
+    html += '<div class="upload-status ' + cls + '"><span data-status="' + index + '">' + esc(label) + '</span><div class="upload-progress"><div data-progress="' + index + '" style="width:' + (p.percent || 0) + '%"></div></div></div>';
     html += '</div>';
   });
   list.innerHTML = html;
@@ -878,6 +905,16 @@ function uploadOne(p, index) {
       p.percent = Math.round(event.loaded * 100 / event.total);
       var bar = document.querySelector('#uploadList [data-progress="' + index + '"]');
       if (bar) bar.style.width = p.percent + "%";
+      var label = document.querySelector('#uploadList [data-status="' + index + '"]');
+      if (label) label.textContent = "上传中 " + p.percent + "%";
+      updateUploadOverall();
+    };
+    xhr.upload.onload = function () {
+      p.status = "parsing";
+      p.message = "解析中";
+      p.percent = 100;
+      renderUploadPlan();
+      updateUploadOverall();
     };
     xhr.onload = function () {
       var data;
@@ -906,7 +943,9 @@ async function startUpload() {
   $("fileInput").disabled = true;
   $("folderInput").disabled = true;
   $("applyAll").disabled = true;
-  var stats = { uploaded: 0, renamed: 0, duplicate: 0, skipped: 0, failed: 0 };
+  var stats = { uploaded: 0, renamed: 0, duplicate: 0, skipped: 0, failed: 0, parseFailed: 0 };
+  $("uploadOverall").hidden = false;
+  updateUploadOverall();
   for (var index = 0; index < state.uploadPlan.length; index++) {
     var p = state.uploadPlan[index];
     if (p.status === "invalid") {
@@ -937,12 +976,15 @@ async function startUpload() {
     p.message = "上传中";
     renderUploadPlan();
     var result = await uploadOne(p, index);
+    p.result = result;
     if (result.status === "uploaded") {
       stats.uploaded++;
       if (result.name && result.name !== p.name) stats.renamed++;
       p.status = "uploaded";
       p.percent = 100;
-      p.message = "已上传" + (result.name && result.name !== p.name ? "（" + result.name + "）" : "");
+      p.parseFailed = result.parse_status === "error";
+      if (p.parseFailed) stats.parseFailed++;
+      p.message = p.parseFailed ? "已上传 · 解析失败" : "已入库";
     } else if (result.status === "skipped_duplicate") {
       stats.duplicate++;
       p.status = "skipped";
@@ -965,9 +1007,11 @@ async function startUpload() {
   $("applyAll").disabled = false;
   updateUploadStart();
   var summary = "上传完成：成功 " + stats.uploaded + "，重命名 " + stats.renamed + "，重复跳过 " + stats.duplicate + "，手动跳过 " + stats.skipped + "，失败 " + stats.failed;
+  if (stats.parseFailed) summary += "，解析失败 " + stats.parseFailed;
   $("uploadSummary").hidden = false;
   $("uploadSummary").textContent = summary;
   showToast(summary, stats.failed ? "error" : "info");
+  updateUploadOverall();
   await refreshAll();
 }
 
@@ -997,7 +1041,7 @@ async function loadVersionInfo() {
     var parts = ["运行版本 " + (info.version || "dev")];
     if (info.commit) parts.push("提交 " + String(info.commit).slice(0, 7));
     if (info.build_time) parts.push("构建 " + info.build_time);
-    parts.push("页面资源 v=6");
+    parts.push("页面资源 v=7");
     box.innerHTML = parts.map(function (item) {
       return '<span class="version-chip">' + esc(item) + '</span>';
     }).join("");

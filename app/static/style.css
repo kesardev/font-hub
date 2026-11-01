@@ -848,3 +848,14 @@ thead th[data-sort] { cursor: pointer; user-select: none; white-space: nowrap; }
 thead th[data-sort]:hover, thead th[data-sort].sorted { color: var(--text); }
 thead th[data-sort].sorted::after { content: " ↑"; font-size: 10px; color: var(--accent); }
 thead th[data-sort].sorted.sort-desc::after { content: " ↓"; }
+.upload-overall { margin: 12px 0 6px; }
+.upload-overall-text { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 4px; }
+.upload-status.parsing { color: var(--accent); }
+.upload-status.parsing .upload-progress > div {
+  background: repeating-linear-gradient(45deg, var(--accent) 0 6px, var(--accent-strong) 6px 12px);
+  animation: upload-stripes 0.8s linear infinite;
+}
+@keyframes upload-stripes {
+  from { background-position: 0 0; }
+  to { background-position: 24px 0; }
+}

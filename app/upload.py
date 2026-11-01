@@ -272,6 +272,11 @@ def finalize(
                 "md5": md5,
                 "sha1": sha1,
                 "sha256": sha256,
+                "family": meta.get("family"),
+                "version": meta.get("version"),
+                "face_count": meta.get("face_count", 1),
+                "parse_status": meta.get("status", "ok"),
+                "parse_error": meta.get("error"),
             }
         finally:
             conn.close()

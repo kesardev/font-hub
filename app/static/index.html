@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>FontHub · 字体库</title>
-  <link rel="stylesheet" href="/static/style.css?v=6">
+  <link rel="stylesheet" href="/static/style.css?v=7">
   <link rel="icon" type="image/svg+xml" href="/static/icon.svg?v=6">
 </head>
 <body>
@@ -157,6 +157,10 @@
           <label class="check"><input id="applyAll" type="checkbox"> 对全部重名冲突应用相同选择</label>
           <button id="uploadStart" class="btn primary" disabled>开始上传</button>
         </div>
+        <div id="uploadOverall" class="upload-overall" hidden>
+          <div class="upload-overall-text"><span>总进度</span><span id="uploadOverallText">0%</span></div>
+          <div class="upload-progress"><div id="uploadOverallBar"></div></div>
+        </div>
         <div id="uploadList" class="upload-list"></div>
         <div id="uploadSummary" class="upload-summary" hidden></div>
       </div>
@@ -208,6 +212,6 @@
     </div>
   </div>
   <div id="toast" class="toast" hidden></div>
-  <script src="/static/app.js?v=6"></script>
+  <script src="/static/app.js?v=7"></script>
 </body>
 </html>
